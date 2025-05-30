@@ -20,6 +20,7 @@
 
 struct samsung_amsa26zp01 {
 	struct drm_panel panel;
+	struct drm_connector *connector;
 	struct mipi_dsi_device *dsi;
 	struct drm_dsc_config dsc;
 	struct gpio_desc *reset_gpio;
@@ -32,6 +33,27 @@ struct samsung_amsa26zp01 *to_samsung_amsa26zp01(struct drm_panel *panel)
 	return container_of(panel, struct samsung_amsa26zp01, panel);
 }
 
+static int samsung_amsa26zp01_get_current_mode(struct samsung_amsa26zp01 *ctx)
+{
+	struct drm_connector *connector = ctx->connector;
+	struct drm_crtc_state *crtc_state;
+	int i;
+
+	/* Return the default (first) mode if no info available yet */
+	if (!connector->state || !connector->state->crtc)
+		return 0;
+
+	crtc_state = connector->state->crtc->state;
+
+	for (i = 0; i < ctx->desc->num_modes; i++) {
+		if (drm_mode_match(&crtc_state->mode,
+				   &ctx->desc->modes[i],
+				   DRM_MODE_MATCH_TIMINGS | DRM_MODE_MATCH_CLOCK))
+			return i;
+	}
+
+	return 0;
+}
 static void samsung_amsa26zp01_reset(struct samsung_amsa26zp01 *ctx)
 {
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
@@ -53,7 +75,7 @@ static void samsung_amsa26zp01_on(struct mipi_dsi_multi_context *dsi_ctx)
 	/* 60 Hz */
 	// mipi_dsi_generic_write_seq_multi(dsi_ctx, 0x60, 0x00);
 	/* 120 Hz */
-	mipi_dsi_generic_write_seq_multi(dsi_ctx, 0x60, 0x20);
+	// mipi_dsi_generic_write_seq_multi(dsi_ctx, 0x60, 0x20);
 	mipi_dsi_msleep(dsi_ctx, 50);
 	// #define SAMSUNG_BRIGHTNESS_MODE	0x53
 	// mipi_dsi_generic_write_seq_multi(dsi_ctx, SAMSUNG_BRIGHTNESS_MODE, 0xE0);
@@ -91,7 +113,16 @@ static int samsung_amsa26zp01_prepare(struct drm_panel *panel)
 		return dsi_ctx.accum_err;
 
 	samsung_amsa26zp01_reset(ctx);
-
+	int cur_mode = samsung_amsa26zp01_get_current_mode(ctx);
+	int cur_vrefresh = drm_mode_vrefresh(&ctx->desc->modes[cur_mode]);
+	if (cur_vrefresh == 120) {
+		/* 120 Hz */
+		mipi_dsi_generic_write_seq_multi(dsi_ctx, 0x60, 0x20);
+	}
+	else {
+		/* 60 Hz */
+		mipi_dsi_generic_write_seq_multi(dsi_ctx, 0x60, 0x00);
+	}
 	samsung_amsa26zp01_on(&dsi_ctx);
 
 	drm_dsc_pps_payload_pack(&pps, &ctx->dsc);
