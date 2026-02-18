@@ -24,10 +24,6 @@
 /delete-node/ &xbl_aop_mem;
 
 / {
-
-	model = "Xiaomi Pad 6";
-	compatible = "xiaomi,pipa", "qcom,sm8250";
-
 	chassis-type = "tablet";
 
 	/* required for bootloader to select correct board */
@@ -553,8 +549,6 @@
 	status = "okay";
 
 	display_panel: panel@0 {
-		compatible = "xiaomi,pipa-csot-nt36532", "novatek,nt36532";
-
 		reg = <0>;
 
 		vddio-supply = <&vreg_l14a_1p88>;
@@ -570,7 +564,7 @@
 
 		backlight = <&backlight>;
 
-		status = "okay";
+		status = "disabled";
 
 		ports {
 			#address-cells = <1>;
@@ -714,9 +708,9 @@
 	cs-gpios = <&tlmm 11 GPIO_ACTIVE_LOW>;
 	touchscreen: touchscreen@0 {
 		compatible = "novatek,NVT-ts-spi-nt36532";
-
+		
 		reg = <0>; //Same as CS ID
-		status = "okay";
+		status = "disabled";
 
 		touchscreen-size-x = <18000>;
 		touchscreen-size-y = <28800>;
@@ -731,7 +725,6 @@
 
 		panel = <&display_panel>;
 
-		firmware-name = "novatek/nt36532_csot.bin";
 	};
 };
 
