@@ -116,8 +116,18 @@
 	gpio_keys: gpio-keys {
 		compatible = "gpio-keys";
 
-		pinctrl-0 = <&vol_up_n>;
+		pinctrl-0 = <&hall_sensor_default>, <&vol_up_n>;
 		pinctrl-names = "default";
+
+		event-hall-sensor {
+			label = "Hall Effect Sensor";
+			gpios = <&tlmm 110 GPIO_ACTIVE_LOW>;
+			linux,input-type = <EV_SW>;
+			linux,code = <SW_LID>;
+			debounce-interval = <15>;
+			linux,can-disable;
+			wakeup-source;
+		};
 
 		key-vol-up {
 			label = "Volume Up";
@@ -980,6 +990,13 @@
 		drive-strength = <2>;
 		bias-pull-up;
 		input-enable;
+	};
+
+	hall_sensor_default: hall_sensor_default-state {
+		pins = "gpio110";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-up;
 	};
 
 	mclk0_active: mclk0_active-state {
